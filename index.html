@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Математический ловец - Nintendo EG-26 Egg Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            font-family: 'Press Start 2P', cursive, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #fff;
+            line-height: 1.5;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            background: linear-gradient(to bottom, #1a237e, #0d47a1);
+            border: 8px solid #ffcc00;
+        }
+        
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 10;
+            background: rgba(13, 19, 33, 0.9);
+        }
+        
+        #start-screen, #game-over-screen {
+            background: radial-gradient(circle, #1a237e 0%, #0d47a1 100%);
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            color: #ffcc00;
+            text-shadow: 0 0 10px #ff5722, 0 0 20px #ff5722;
+            letter-spacing: 3px;
+        }
+        
+        h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #4caf50;
+            text-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+        }
+        
+        p {
+            font-size: 18px;
+            margin-bottom: 15px;
+            max-width: 600px;
+        }
+        
+        #problem-display {
+            font-size: 36px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            color: #ffcc00;
+            border: 3px solid #ff5722;
+        }
+        
+        #answer-display {
+            font-size: 32px;
+            min-height: 50px;
+            margin: 20px 0;
+            color: #4caf50;
+            letter-spacing: 5px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin: 20px 0;
+            font-size: 24px;
+        }
+        
+        .stat-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #ffcc00;
+        }
+        
+        .button {
+            background: linear-gradient(to bottom, #ff5722, #e64a19);
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            padding: 15px 30px;
+            margin: 20px 5px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 5px 0 #b71c1c;
+            transition: all 0.1s;
+        }
+        
+        .button:hover {
+            background: linear-gradient(to bottom, #ff7043, #f4511e);
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #b71c1c;
+        }
+        
+        .button:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+        
+        .controls {
+            display: flex;
+            margin-top: 30px;
+            gap: 20px;
+        }
+        
+        .control-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #4caf50;
+            font-size: 14px;
+        }
+        
+        .hearts {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .heart {
+            width: 30px;
+            height: 30px;
+            background: #f44336;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        #score-value {
+            color: #4caf50;
+        }
+        
+        #level-value {
+            color: #ffcc00;
+        }
+        
+        #lives-value {
+            color: #f44336;
+        }
+        
+        .character {
+            width: 80px;
+            height: 80px;
+            background: #ff5722;
+            border-radius: 50%;
+            position: relative;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(255, 87, 34, 0.7);
+        }
+        
+        .character::before {
+            content: "";
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #ffcc00;
+            border-radius: 50%;
+            top: 20px;
+            left: 15px;
+            box-shadow: 35px 0 0 #ffcc00;
+        }
+        
+        .character::after {
+            content: "";
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            background: #e64a19;
+            border-radius: 50%;
+            bottom: 15px;
+            left: 20px;
+        }
+        
+        .number {
+            position: absolute;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            animation: float 3s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .correct {
+            background: radial-gradient(circle, #4caf50, #2e7d32);
+            color: white;
+            border: 3px solid #aed581;
+            box-shadow: 0 0 15px #4caf50;
+        }
+        
+        .incorrect {
+            background: radial-gradient(circle, #f44336, #b71c1c);
+            color: white;
+            border: 3px solid #ffab91;
+            box-shadow: 0 0 15px #f44336;
+        }
+        
+        .neutral {
+            background: radial-gradient(circle, #9e9e9e, #616161);
+            color: white;
+            border: 3px solid #e0e0e0;
+        }
+        
+        @media (max-width: 850px) {
+            #game-container {
+                width: 95vw;
+                height: 85vh;
+            }
+            
+            h1 {
+                font-size: 32px;
+            }
+            
+            h2 {
+                font-size: 24px;
+            }
+            
+            .button {
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- Экран старта -->
+        <div id="start-screen" class="screen">
+            <h1>Математический Ловец</h1>
+            <div class="character"></div>
+            <p>Лови правильные цифры, чтобы решить математические задачи!</p>
+            <p>Избегай неправильных цифр, чтобы не потерять жизни.</p>
+            
+            <div class="controls">
+                <div class="control-item">
+                    <p>Управление:</p>
+                    <p>← → для движения</p>
+                </div>
+                <div class="control-item">
+                    <p>Цифры:</p>
+                    <div class="number correct">5</div>
+                    <div class="number incorrect">3</div>
+                </div>
+            </div>
+            
+            <button id="start-button" class="button">Начать игру</button>
+        </div>
+        
+        <!-- Игровой экран -->
+        <div id="game-screen" class="screen hidden">
+            <h2>Реши задачу:</h2>
+            <div id="problem-display">5 + 3 = ?</div>
+            <div id="answer-display"></div>
+            
+            <div class="stats">
+                <div class="stat-box">Очки: <span id="score-value">0</span></div>
+                <div class="stat-box">Уровень: <span id="level-value">1</span></div>
+                <div class="stat-box">Жизни: <span id="lives-value">3</span></div>
+            </div>
+            
+            <div id="timer-container">
+                <div id="timer-bar"></div>
+            </div>
+        </div>
+        
+        <!-- Экран завершения игры -->
+        <div id="game-over-screen" class="screen hidden">
+            <h1>Игра Окончена!</h1>
+            <h2>Ваш счет: <span id="final-score">0</span></h2>
+            <p id="game-over-message">Попробуйте еще раз!</p>
+            <button id="restart-button" class="button">Играть снова</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Элементы интерфейса
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const startButton = document.getElementById('start-button');
+            const restartButton = document.getElementById('restart-button');
+            const problemDisplay = document.getElementById('problem-display');
+            const answerDisplay = document.getElementById('answer-display');
+            const scoreValue = document.getElementById('score-value');
+            const levelValue = document.getElementById('level-value');
+            const livesValue = document.getElementById('lives-value');
+            const finalScore = document.getElementById('final-score');
+            const gameOverMessage = document.getElementById('game-over-message');
+            const timerBar = document.getElementById('timer-bar');
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Размеры игрового поля
+            const GAME_WIDTH = 800;
+            const GAME_HEIGHT = 600;
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+            
+            // Игровые переменные
+            let gameState = {
+                score: 0,
+                level: 1,
+                lives: 3,
+                speed: 2,
+                gameRunning: false,
+                currentProblem: null,
+                currentAnswer: [],
+                playerX: GAME_WIDTH / 2,
+                numbers: [],
+                lastSpawn: 0,
+                spawnRate: 1500,
+                timer: 30,
+                maxTimer: 30,
+                gameTime: 0
+            };
+            
+            // Инициализация игры
+            function initGame() {
+                gameState = {
+                    score: 0,
+                    level: 1,
+                    lives: 3,
+                    speed: 2,
+                    gameRunning: true,
+                    currentProblem: generateProblem(),
+                    currentAnswer: [],
+                    playerX: GAME_WIDTH / 2,
+                    numbers: [],
+                    lastSpawn: 0,
+                    spawnRate: 1500,
+                    timer: 30,
+                    maxTimer: 30,
+                    gameTime: 0
+                };
+                
+                updateUI();
+                gameLoop();
+            }
+            
+            // Генерация математической задачи
+            function generateProblem() {
+                let a, b, operator, answer;
+                const operators = ['+', '-', '*'];
+                
+                // Выбор оператора в зависимости от уровня
+                let opIndex = Math.min(Math.floor(gameState.level / 3), operators.length - 1);
+                operator = operators[opIndex];
+                
+                // Генерация чисел в зависимости от уровня
+                const maxNumber = 5 + Math.floor(gameState.level / 2) * 3;
+                
+                switch(operator) {
+                    case '+':
+                        a = Math.floor(Math.random() * maxNumber) + 1;
+                        b = Math.floor(Math.random() * maxNumber) + 1;
+                        answer = a + b;
+                        break;
+                    case '-':
+                        b = Math.floor(Math.random() * maxNumber) + 1;
+                        a = b + Math.floor(Math.random() * maxNumber) + 1;
+                        answer = a - b;
+                        break;
+                    case '*':
+                        a = Math.floor(Math.random() * Math.min(5 + gameState.level, 12)) + 1;
+                        b = Math.floor(Math.random() * Math.min(5 + gameState.level, 8)) + 1;
+                        answer = a * b;
+                        break;
+                }
+                
+                return {
+                    text: `${a} ${operator} ${b} = ?`,
+                    answer: answer.toString(),
+                    collected: ''
+                };
+            }
+            
+            // Создание падающей цифры
+            function spawnNumber() {
+                const numberTypes = ['correct', 'incorrect', 'neutral'];
+                const type = numberTypes[Math.floor(Math.random() * numberTypes.length)];
+                
+                // Создаем в основном правильные цифры
+                let value;
+                if (type === 'correct') {
+                    // Выбираем случайную цифру из правильного ответа
+                    const remaining = gameState.currentProblem.answer.split('')
+                        .filter(digit => !gameState.currentAnswer.includes(digit));
+                    
+                    if (remaining.length > 0) {
+                        value = remaining[Math.floor(Math.random() * remaining.length)];
+                    } else {
+                        // Если все цифры собраны, создаем нейтральную
+                        value = Math.floor(Math.random() * 10).toString();
+                    }
+                } else {
+                    value = Math.floor(Math.random() * 10).toString();
+                }
+                
+                const number = {
+                    x: Math.random() * (GAME_WIDTH - 50),
+                    y: -50,
+                    value: value,
+                    type: type,
+                    width: 40,
+                    height: 40,
+                    speed: gameState.speed + Math.random() * 1.5
+                };
+                
+                gameState.numbers.push(number);
+            }
+            
+            // Обновление игрового состояния
+            function update(deltaTime) {
+                if (!gameState.gameRunning) return;
+                
+                gameState.gameTime += deltaTime;
+                
+                // Обновление таймера
+                gameState.timer -= deltaTime / 1000;
+                if (gameState.timer <= 0) {
+                    loseLife();
+                    gameState.timer = gameState.maxTimer;
+                }
+                
+                // Обновление позиции игрока
+                updatePlayerPosition();
+                
+                // Создание новых цифр
+                if (gameState.gameTime - gameState.lastSpawn > gameState.spawnRate) {
+                    spawnNumber();
+                    gameState.lastSpawn = gameState.gameTime;
+                }
+                
+                // Обновление позиций цифр
+                for (let i = gameState.numbers.length - 1; i >= 0; i--) {
+                    const number = gameState.numbers[i];
+                    number.y += number.speed;
+                    
+                    // Проверка столкновения с игроком
+                    if (checkCollision(
+                        gameState.playerX - 30, GAME_HEIGHT - 100, 60, 60,
+                        number.x, number.y, number.width, number.height
+                    )) {
+                        handleNumberCollection(number);
+                        gameState.numbers.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Удаление цифр, упавших за пределы экрана
+                    if (number.y > GAME_HEIGHT) {
+                        gameState.numbers.splice(i, 1);
+                    }
+                }
+                
+                // Проверка завершения задачи
+                if (gameState.currentAnswer.join('') === gameState.currentProblem.answer) {
+                    completeProblem();
+                }
+            }
+            
+            // Обновление позиции игрока
+            function updatePlayerPosition() {
+                // В реальной игре здесь будет обработка ввода с клавиатуры
+                // Для демонстрации игрок двигается случайным образом
+                gameState.playerX += (Math.random() - 0.5) * 4;
+                gameState.playerX = Math.max(30, Math.min(GAME_WIDTH - 30, gameState.playerX));
+            }
+            
+            // Проверка столкновений
+            function checkCollision(rect1X, rect1Y, rect1W, rect1H, rect2X, rect2Y, rect2W, rect2H) {
+                return (
+                    rect1X < rect2X + rect2W &&
+                    rect1X + rect1W > rect2X &&
+                    rect1Y < rect2Y + rect2H &&
+                    rect1Y + rect1H > rect2Y
+                );
+            }
+            
+            // Обработка сбора цифры
+            function handleNumberCollection(number) {
+                if (number.type === 'correct' && 
+                    gameState.currentProblem.answer.includes(number.value) &&
+                    !gameState.currentAnswer.includes(number.value)) {
+                    // Правильная цифра
+                    gameState.score += 10 * gameState.level;
+                    gameState.currentAnswer.push(number.value);
+                    gameState.currentAnswer.sort();
+                    gameState.lives = Math.min(gameState.lives + 0.2, 10);
+                    gameState.timer = Math.min(gameState.timer + 2, gameState.maxTimer);
+                } else if (number.type === 'incorrect') {
+                    // Неправильная цифра
+                    gameState.score = Math.max(0, gameState.score - 5);
+                    gameState.lives -= 1;
+                    gameState.timer -= 3;
+                    
+                    if (gameState.lives <= 0) {
+                        gameOver();
+                    }
+                }
+                
+                updateUI();
+            }
+            
+            // Завершение текущей задачи
+            function completeProblem() {
+                gameState.score += 50 * gameState.level;
+                gameState.level += 1;
+                gameState.speed += 0.2;
+                gameState.spawnRate = Math.max(500, gameState.spawnRate - 50);
+                gameState.currentProblem = generateProblem();
+                gameState.currentAnswer = [];
+                gameState.timer = gameState.maxTimer;
+                
+                updateUI();
+            }
+            
+            // Потеря жизни
+            function loseLife() {
+                gameState.lives -= 1;
+                gameState.timer = gameState.maxTimer;
+                
+                if (gameState.lives <= 0) {
+                    gameOver();
+                }
+                
+                updateUI();
+            }
+            
+            // Конец игры
+            function gameOver() {
+                gameState.gameRunning = false;
+                finalScore.textContent = gameState.score;
+                
+                if (gameState.score > 500) {
+                    gameOverMessage.textContent = "Отличный результат! Вы математический гений!";
+                } else if (gameState.score > 200) {
+                    gameOverMessage.textContent = "Хорошая игра! Продолжайте тренироваться!";
+                } else {
+                    gameOverMessage.textContent = "Попробуйте еще раз! Вы сможете лучше!";
+                }
+                
+                gameScreen.classList.add('hidden');
+                gameOverScreen.classList.remove('hidden');
+            }
+            
+            // Обновление интерфейса
+            function updateUI() {
+                problemDisplay.textContent = gameState.currentProblem.text;
+                answerDisplay.textContent = gameState.currentAnswer.join('');
+                scoreValue.textContent = gameState.score;
+                levelValue.textContent = gameState.level;
+                livesValue.textContent = Math.floor(gameState.lives);
+                
+                // Обновление таймера
+                const timerPercent = (gameState.timer / gameState.maxTimer) * 100;
+                timerBar.style.width = `${timerPercent}%`;
+                timerBar.style.background = timerPercent > 50 ? 
+                    'linear-gradient(to right, #4caf50, #8bc34a)' : 
+                    timerPercent > 20 ? 
+                    'linear-gradient(to right, #ffeb3b, #ffc107)' : 
+                    'linear-gradient(to right, #f44336, #ff5722)';
+            }
+            
+            // Отрисовка игры
+            function draw() {
+                // Очистка экрана
+                ctx.fillStyle = '#0d1b2a';
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                
+                // Отрисовка фона
+                drawBackground();
+                
+                // Отрисовка игрока
+                drawPlayer();
+                
+                // Отрисовка цифр
+                drawNumbers();
+            }
+            
+            // Отрисовка фона
+            function drawBackground() {
+                // Звезды
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 100; i++) {
+                    const x = Math.random() * GAME_WIDTH;
+                    const y = Math.random() * GAME_HEIGHT;
+                    const size = Math.random() * 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Земля
+                ctx.fillStyle = '#2e7d32';
+                ctx.fillRect(0, GAME_HEIGHT - 40, GAME_WIDTH, 40);
+                
+                // Трава
+                ctx.fillStyle = '#4caf50';
+                for (let i = 0; i < 50; i++) {
+                    const x = i * 20;
+                    const height = 10 + Math.random() * 15;
+                    ctx.fillRect(x, GAME_HEIGHT - 40, 10, -height);
+                }
+            }
+            
+            // Отрисовка игрока
+            function drawPlayer() {
+                const playerY = GAME_HEIGHT - 90;
+                
+                // Тень
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.beginPath();
+                ctx.ellipse(gameState.playerX, playerY + 45, 30, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Тело
+                ctx.fillStyle = '#ff5722';
+                ctx.beginPath();
+                ctx.arc(gameState.playerX, playerY, 30, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Глаза
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath();
+                ctx.arc(gameState.playerX - 15, playerY - 5, 8, 0, Math.PI * 2);
+                ctx.arc(gameState.playerX + 15, playerY - 5, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Зрачки
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(gameState.playerX - 15, playerY - 5, 4, 0, Math.PI * 2);
+                ctx.arc(gameState.playerX + 15, playerY - 5, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Улыбка
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(gameState.playerX, playerY + 5, 15, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+            }
+            
+            // Отрисовка цифр
+            function drawNumbers() {
+                gameState.numbers.forEach(number => {
+                    // Определение цвета в зависимости от типа
+                    let color, border;
+                    switch (number.type) {
+                        case 'correct':
+                            color = '#4caf50';
+                            border = '#aed581';
+                            break;
+                        case 'incorrect':
+                            color = '#f44336';
+                            border = '#ffab91';
+                            break;
+                        default:
+                            color = '#9e9e9e';
+                            border = '#e0e0e0';
+                    }
+                    
+                    // Тень
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(number.x + number.width/2, number.y + number.height + 3, number.width/2 - 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Основной круг
+                    const gradient = ctx.createRadialGradient(
+                        number.x + number.width/2, number.y + number.height/2, 5,
+                        number.x + number.width/2, number.y + number.height/2, number.width/2
+                    );
+                    gradient.addColorStop(0, lightenColor(color, 30));
+                    gradient.addColorStop(1, color);
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(number.x + number.width/2, number.y + number.height/2, number.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Обводка
+                    ctx.strokeStyle = border;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(number.x + number.width/2, number.y + number.height/2, number.width/2, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Цифра
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 24px "Press Start 2P", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(number.value, number.x + number.width/2, number.y + number.height/2);
+                });
+            }
+            
+            // Осветление цвета
+            function lightenColor(color, percent) {
+                const num = parseInt(color.replace("#",""), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) + amt;
+                const G = (num >> 8 & 0x00FF) + amt;
+                const B = (num & 0x0000FF) + amt;
+                
+                return `#${(
+                    0x1000000 +
+                    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+                    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+                    (B < 255 ? (B < 1 ? 0 : B) : 255)
+                ).toString(16).slice(1)}`;
+            }
+            
+            // Игровой цикл
+            function gameLoop() {
+                if (!gameState.gameRunning) return;
+                
+                const currentTime = Date.now();
+                const deltaTime = currentTime - (lastTime || currentTime);
+                lastTime = currentTime;
+                
+                update(deltaTime);
+                draw();
+                
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Обработчики событий
+            startButton.addEventListener('click', () => {
+                startScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                initGame();
+            });
+            
+            restartButton.addEventListener('click', () => {
+                gameOverScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                initGame();
+            });
+            
+            // Обработка клавиатуры
+            document.addEventListener('keydown', (e) => {
+                if (!gameState.gameRunning) return;
+                
+                const speed = 8;
+                
+                if (e.key === 'ArrowLeft') {
+                    gameState.playerX = Math.max(30, gameState.playerX - speed);
+                } else if (e.key === 'ArrowRight') {
+                    gameState.playerX = Math.min(GAME_WIDTH - 30, gameState.playerX + speed);
+                }
+            });
+            
+            // Обработка сенсорного управления
+            let touchStartX = 0;
+            
+            canvas.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                e.preventDefault();
+            });
+            
+            canvas.addEventListener('touchmove', (e) => {
+                if (!gameState.gameRunning) return;
+                
+                const touchX = e.touches[0].clientX;
+                const diff = touchX - touchStartX;
+                gameState.playerX = Math.max(30, Math.min(GAME_WIDTH - 30, gameState.playerX + diff * 0.5));
+                touchStartX = touchX;
+                e.preventDefault();
+            });
+            
+            let lastTime = Date.now();
+        });
+    </script>
+</body>
+</html>
