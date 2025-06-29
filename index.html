@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Математический ловец - Nintendo EG-26 Egg Style</title>
+    <title>Математический Ловец</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -84,22 +85,60 @@
             max-width: 600px;
         }
         
+        /* Новый стиль для HUD */
+        #game-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 5;
+            border-bottom: 3px solid #ffcc00;
+        }
+        
+        .hud-section {
+            display: flex;
+            align-items: center;
+        }
+        
+        .hud-item {
+            margin: 0 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .hud-value {
+            color: #ffcc00;
+            margin-left: 8px;
+            font-size: 24px;
+        }
+        
         #problem-display {
             font-size: 36px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px 30px;
+            padding: 10px 30px;
             border-radius: 15px;
-            margin: 20px 0;
             color: #ffcc00;
             border: 3px solid #ff5722;
+            max-width: 70%;
+            text-align: center;
         }
         
         #answer-display {
             font-size: 32px;
             min-height: 50px;
-            margin: 20px 0;
+            margin-top: 15px;
             color: #4caf50;
             letter-spacing: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 20px;
+            border-radius: 10px;
         }
         
         .stats {
@@ -160,8 +199,8 @@
         
         .hearts {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 5px;
+            margin-left: 10px;
         }
         
         .heart {
@@ -169,22 +208,27 @@
             height: 30px;
             background: #f44336;
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            box-shadow: 0 0 5px rgba(244, 67, 54, 0.8);
         }
         
         .hidden {
             display: none;
         }
         
-        #score-value {
-            color: #4caf50;
+        #timer-container {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.3);
         }
         
-        #level-value {
-            color: #ffcc00;
-        }
-        
-        #lives-value {
-            color: #f44336;
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(to right, #4caf50, #8bc34a);
+            transition: width 0.1s linear;
         }
         
         .character {
@@ -274,17 +318,69 @@
                 font-size: 24px;
             }
             
+            #problem-display {
+                font-size: 24px;
+                padding: 8px 15px;
+            }
+            
+            .hud-item {
+                font-size: 16px;
+            }
+            
+            .hud-value {
+                font-size: 18px;
+            }
+            
             .button {
                 font-size: 16px;
                 padding: 12px 20px;
             }
+            
+            .heart {
+                width: 20px;
+                height: 20px;
+            }
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="game-container">
         <canvas id="game-canvas"></canvas>
+        
+        <!-- HUD в верхней части экрана -->
+        <div id="game-hud">
+            <div class="hud-section">
+                <div class="hud-item">
+                    <span>Очки:</span>
+                    <span id="score-value" class="hud-value">0</span>
+                </div>
+                <div class="hud-item">
+                    <span>Жизни:</span>
+                    <div class="hearts">
+                        <div class="heart"></div>
+                        <div class="heart"></div>
+                        <div class="heart"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="problem-display">5 + 3 = ?</div>
+            
+            <div class="hud-section">
+                <div class="hud-item">
+                    <span>Уровень:</span>
+                    <span id="level-value" class="hud-value">1</span>
+                </div>
+                <div class="hud-item">
+                    <span>Время:</span>
+                    <span id="timer-value" class="hud-value">30</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="timer-container">
+            <div id="timer-bar"></div>
+        </div>
         
         <!-- Экран старта -->
         <div id="start-screen" class="screen">
@@ -310,18 +406,10 @@
         
         <!-- Игровой экран -->
         <div id="game-screen" class="screen hidden">
-            <h2>Реши задачу:</h2>
-            <div id="problem-display">5 + 3 = ?</div>
             <div id="answer-display"></div>
             
             <div class="stats">
-                <div class="stat-box">Очки: <span id="score-value">0</span></div>
-                <div class="stat-box">Уровень: <span id="level-value">1</span></div>
-                <div class="stat-box">Жизни: <span id="lives-value">3</span></div>
-            </div>
-            
-            <div id="timer-container">
-                <div id="timer-bar"></div>
+                <div class="stat-box">Собрано: <span id="collected-value">0</span>/<span id="total-value">0</span></div>
             </div>
         </div>
         
@@ -329,6 +417,7 @@
         <div id="game-over-screen" class="screen hidden">
             <h1>Игра Окончена!</h1>
             <h2>Ваш счет: <span id="final-score">0</span></h2>
+            <p>Пройдено уровней: <span id="final-level">1</span></p>
             <p id="game-over-message">Попробуйте еще раз!</p>
             <button id="restart-button" class="button">Играть снова</button>
         </div>
@@ -347,9 +436,14 @@
             const scoreValue = document.getElementById('score-value');
             const levelValue = document.getElementById('level-value');
             const livesValue = document.getElementById('lives-value');
+            const timerValue = document.getElementById('timer-value');
             const finalScore = document.getElementById('final-score');
+            const finalLevel = document.getElementById('final-level');
             const gameOverMessage = document.getElementById('game-over-message');
             const timerBar = document.getElementById('timer-bar');
+            const collectedValue = document.getElementById('collected-value');
+            const totalValue = document.getElementById('total-value');
+            const heartsContainer = document.querySelector('.hearts');
             const canvas = document.getElementById('game-canvas');
             const ctx = canvas.getContext('2d');
             
@@ -397,6 +491,7 @@
                 };
                 
                 updateUI();
+                updateHearts();
                 gameLoop();
             }
             
@@ -461,7 +556,7 @@
                 
                 const number = {
                     x: Math.random() * (GAME_WIDTH - 50),
-                    y: -50,
+                    y: 80, // Начинаем ниже HUD
                     value: value,
                     type: type,
                     width: 40,
@@ -519,6 +614,9 @@
                 if (gameState.currentAnswer.join('') === gameState.currentProblem.answer) {
                     completeProblem();
                 }
+                
+                // Обновление UI
+                updateUI();
             }
             
             // Обновление позиции игрока
@@ -562,6 +660,7 @@
                 }
                 
                 updateUI();
+                updateHearts();
             }
             
             // Завершение текущей задачи
@@ -586,13 +685,24 @@
                     gameOver();
                 }
                 
-                updateUI();
+                updateHearts();
+            }
+            
+            // Обновление отображения жизней
+            function updateHearts() {
+                heartsContainer.innerHTML = '';
+                for (let i = 0; i < Math.floor(gameState.lives); i++) {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heartsContainer.appendChild(heart);
+                }
             }
             
             // Конец игры
             function gameOver() {
                 gameState.gameRunning = false;
                 finalScore.textContent = gameState.score;
+                finalLevel.textContent = gameState.level - 1;
                 
                 if (gameState.score > 500) {
                     gameOverMessage.textContent = "Отличный результат! Вы математический гений!";
@@ -612,7 +722,10 @@
                 answerDisplay.textContent = gameState.currentAnswer.join('');
                 scoreValue.textContent = gameState.score;
                 levelValue.textContent = gameState.level;
-                livesValue.textContent = Math.floor(gameState.lives);
+                timerValue.textContent = Math.ceil(gameState.timer);
+                
+                collectedValue.textContent = gameState.currentAnswer.length;
+                totalValue.textContent = gameState.currentProblem.answer.length;
                 
                 // Обновление таймера
                 const timerPercent = (gameState.timer / gameState.maxTimer) * 100;
@@ -646,7 +759,7 @@
                 ctx.fillStyle = '#ffffff';
                 for (let i = 0; i < 100; i++) {
                     const x = Math.random() * GAME_WIDTH;
-                    const y = Math.random() * GAME_HEIGHT;
+                    const y = Math.random() * (GAME_HEIGHT - 80) + 80; // Ниже HUD
                     const size = Math.random() * 2;
                     ctx.beginPath();
                     ctx.arc(x, y, size, 0, Math.PI * 2);
